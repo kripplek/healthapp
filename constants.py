@@ -19,7 +19,7 @@ key_map = {
     'alerts_historical': 'healthapp:alerts_list'
 }
 
-server_staleness_interal = 5 * 60
+server_staleness_duration = 4 * 60
 
 alert_process_interval = 60
 

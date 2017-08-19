@@ -6,7 +6,7 @@ import time
 import uuid
 import logging
 import os
-from constants import key_map, alert_process_interval
+from constants import key_map, alert_process_interval, server_staleness_duration
 from notify import notify_alert_new, notify_alert_closed, notify_ongoing_alert
 from datetime import datetime
 
@@ -27,7 +27,7 @@ logger.addHandler(ch)
 def get_bad_states(r):
     bad_states = {}
 
-    good_time = int(time.time() - (5 * 60))
+    good_time = int(time.time() - server_staleness_duration)
     for server, value in r.zrevrangebyscore(key_map['server_last_posts'], good_time, 0, score_cast_func=int, withscores=True):
         key = 'stale_%s' % server
         bad_states[key] = {

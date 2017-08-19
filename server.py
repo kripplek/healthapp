@@ -12,7 +12,7 @@ import hashlib
 import base64
 import hmac
 from datetime import datetime, timedelta
-from constants import key_map
+from constants import key_map, server_staleness_duration
 
 mimes = {'.css': 'text/css',
          '.jpg': 'image/jpeg',
@@ -43,14 +43,23 @@ def get_server_info(r, server_name):
         return {}
 
     try:
-        return ujson.loads(info)
+        data = ujson.loads(info)
     except ValueError:
         return {}
+
+    data['name'] = server_name
+
+    return data
 
 
 def get_alert_info(r, alert_id):
     info = r.hgetall(key_map['alert_info'].format(alert_id=alert_id))
     if not info:
+        return {}
+
+    state_name = info.get('state_name')
+
+    if not state_name:
         return {}
 
     start_time = int(float(info['start_time']))
@@ -67,6 +76,17 @@ def get_alert_info(r, alert_id):
     info['duration'] = str(timedelta(seconds=end_time - start_time))
     info['alert_id'] = alert_id
     info['start_time'] = str(datetime.fromtimestamp(start_time))
+
+    alert_parts = state_name.split('_', 1)
+
+    if alert_parts[0] == 'stale':
+        info['human_bad'] = 'Offline'
+
+    info['server'] = get_server_info(r, alert_parts[1])
+
+    # server record missing. possible if you've manually deleted records
+    if not info['server']:
+        info['server'] = {'name': alert_parts[1], 'OS': 'Linux'}
 
     return info
 
@@ -153,7 +173,7 @@ class ServerList:
         self.r = r
 
     def on_get(self, req, resp):
-        good_time = time.time() - (60 * 5)
+        good_time = time.time() - server_staleness_duration
         servers = self.r.zrevrange(key_map['server_last_posts'], 0, -1, withscores=True)
         pretty = ({
             'name': name,
@@ -169,12 +189,20 @@ class AlertList:
         self.r = r
 
     def on_get(self, req, resp):
-        active_alerts = (
-            get_alert_info(self.r, alert_id)
-            for state_name, alert_id in self.r.hgetall(key_map['alert_currently_firing']).iteritems()
-        )
+        active_ids = set()
+        active_alerts = []
+
+        for state_name, alert_id in self.r.hgetall(key_map['alert_currently_firing']).iteritems():
+            active_alerts.append(get_alert_info(self.r, alert_id))
+            active_ids.add(alert_id)
 
         historical_alerts = []
+
+        for alert_id in self.r.zrevrange(key_map['alerts_historical'], 0, -1):
+            if alert_id not in active_ids:
+                info = get_alert_info(self.r, alert_id)
+                if info:
+                    historical_alerts.append(info)
 
         resp.body = ujson.dumps({'active': active_alerts, 'historical': historical_alerts})
 

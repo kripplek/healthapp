@@ -7,7 +7,12 @@ function init_healthapp() {
     $.get('/api/v0/servers', callback);
   }
 
+  function get_alerts(callback) {
+    $.get('/api/v0/alerts', callback);
+  }
+
   var server_list = Handlebars.compile($('#server-list-template').html()),
+      alert_list = Handlebars.compile($('#alert-list-template').html()),
       flash_template = Handlebars.compile($('#flash-template').html()),
       user_pagination_interval = 100,
       $content = $('#content'),
@@ -36,12 +41,19 @@ function init_healthapp() {
 
   function servers_list_page(params) {
     get_servers(function(data) {
-      render_page('Servers List', server_list(data));
+      render_page('Servers', server_list(data));
+    });
+  }
+
+  function alerts_list_page(params) {
+    get_alerts(function(data) {
+      render_page('Alerts', alert_list(data));
     });
   }
 
   router.on({
     '/': servers_list_page,
+    '/alerts': alerts_list_page,
 
     '/server/:servername': function (params) {
       get_server(params.servername, function(data) {
@@ -49,8 +61,5 @@ function init_healthapp() {
       });
     },
 
-    '/user_create': function () {
-      render_page('Create', user_create());
-    },
   }).resolve();
 }
