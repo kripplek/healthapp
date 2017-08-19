@@ -87,7 +87,7 @@ def close_alert(r, state_name, alert_id):
     r.hset(alert_key, 'duration', duration)
 
     # send notifications
-    notify_alert_closed(state_name, alert_id)
+    notify_alert_closed(state_name, alert_id, duration)
 
 
 def should_send_ongoing_alert(last_ongoing_alert_email, alert_send_email_interval, alert_id):
@@ -153,6 +153,7 @@ def main():
             alert_id = create_alert(r, state_name, description)
             logger.info('Created new alert "%s" with id %s', state_name, alert_id)
             new_alerts += 1
+            last_ongoing_alert_email[alert_id] = int(time.time())
             notify_alert_new(alert_id, state_name, description)
 
         # 3: purge records of ancient alerts

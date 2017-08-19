@@ -12,7 +12,7 @@ message_templates = {
     },
     'alert_ongoing': {
         'subject': 'Alert "%(state_name)s" still firing',
-        'body': '''Hi,\n\nAlert "%(state_name)s" is still firing after %(duration)s seconds.\n\n%(alert_id)s\n\nRegards'''
+        'body': '''Hi,\n\nAlert "%(state_name)s" is still firing.\n\n%(alert_id)s\n\nRegards'''
     },
     'alert_closed': {
         'subject': 'Alert "%(state_name)s" closed',
@@ -24,21 +24,21 @@ message_templates = {
 def notify_alert_new(alert_id, state_name, description):
     template = message_templates['alert_new']
     subject = template['subject'] % {'state_name': state_name}
-    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id, 'description': description, 'duration': ''}
+    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id, 'description': description}
     send_email(subject, body)
 
 
-def notify_alert_closed(state_name, alert_id):
+def notify_alert_closed(state_name, alert_id, duration):
     template = message_templates['alert_closed']
     subject = template['subject'] % {'state_name': state_name}
-    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id, 'duration': ''}
+    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id, 'duration': duration}
     send_email(subject, body)
 
 
 def notify_ongoing_alert(alert_id, state_name):
     template = message_templates['alert_ongoing']
     subject = template['subject'] % {'state_name': state_name}
-    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id, 'duration': ''}
+    body = template['body'] % {'state_name': state_name, 'alert_id': alert_id}
     send_email(subject, body)
 
 
