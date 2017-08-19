@@ -8,10 +8,12 @@ import time
 import ujson
 import re
 import os
+import hashlib
 from datetime import datetime
 
 key_map = {
-    'server_last_posts': 'healthapp:server_last_posts'
+    'server_last_posts': 'healthapp:server_last_posts',
+    'server_auth_key': 'healthapp:server_key:{server_name}',
 }
 
 mimes = {'.css': 'text/css',
@@ -67,6 +69,25 @@ class ServerStatus:
         self.r.zadd(key_map['server_last_posts'], now, server_name)
 
 
+class NewServer:
+    def __init__(self, r):
+        self.r = r
+
+    def on_post(self, req, resp, server_name):
+        redis_key = key_map['server_auth_key'].format(server_name=server_name)
+
+        exists = self.r.get(redis_key)
+
+        if exists:
+            raise falcon.HTTPUnauthorized('Already seen this server')
+
+        new_key = hashlib.sha256(os.urandom(32)).hexdigest()
+
+        self.r.set(redis_key, new_key)
+
+        resp.body = ujson.dumps({'key': new_key})
+
+
 class ServerList:
     def __init__(self, r):
         self.r = r
@@ -88,6 +109,9 @@ def get_app():
 
     # Get updates from servers
     app.add_route('/api/v0/status/{server_name}', ServerStatus(r))
+
+    # New server key issuing
+    app.add_route('/api/v0/new_server/{server_name}', NewServer(r))
 
     # General listing of servers and their last status update
     app.add_route('/api/v0/servers', ServerList(r))

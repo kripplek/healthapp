@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gunicorn 'app:get_app()'  --reload --workers 4
+gunicorn 'app:get_app()'  -b 0 --reload --workers 4
