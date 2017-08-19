@@ -124,7 +124,7 @@ def main():
         # Log some info for this round
         loop_end = time.time()
         duration = loop_end - loop_start
-        logger.info('Alert processor ran in %s seconds. Will sleep %s seconds', duration, alert_process_interval)
+        logger.info('Alert processor ran in %.2f seconds. Will sleep %s seconds', duration, alert_process_interval)
         logger.info('New alerts: %s. Ongoing alerts: %s. Closed alerts: %s', new_alerts, ongoing_alerts, closed_alerts)
 
         # Wait until next...
