@@ -14,3 +14,4 @@ build/
 debian/healthapp.postinst.debhelper
 new_version.txt
 config.yaml
+dist
