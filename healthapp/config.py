@@ -9,6 +9,7 @@ saved_configs = None
 
 
 def process_config():
+    global saved_configs
 
     # let this be called more than once from anywhere without
     # reparsing the config files
@@ -44,7 +45,6 @@ def process_config():
         logger.error('failed loading configs')
         return {}
 
-    global saved_configs
     saved_configs = configs
 
     return saved_configs
