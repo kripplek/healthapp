@@ -58,6 +58,14 @@ To start slave agent:
 
     agent
 
+## Prod deployment
+
+If you have [dh-virtualenv](https://github.com/spotify/dh-virtualenv) installed, you can build a .deb package like this:
+
+    dpkg-buildpackage -us -uc
+
+Once the resulting deb is installed, HealthApp will be installed to `/opt/venvs/healthapp/bin`.
+
 ## Meta
 
 - more docs will come
