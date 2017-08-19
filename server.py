@@ -11,7 +11,7 @@ import os
 import hashlib
 import base64
 import hmac
-from datetime import datetime
+from datetime import datetime, timedelta
 from constants import key_map
 
 mimes = {'.css': 'text/css',
@@ -46,6 +46,29 @@ def get_server_info(r, server_name):
         return ujson.loads(info)
     except ValueError:
         return {}
+
+
+def get_alert_info(r, alert_id):
+    info = r.hgetall(key_map['alert_info'].format(alert_id=alert_id))
+    if not info:
+        return {}
+
+    start_time = int(float(info['start_time']))
+    end_time = int(float(info['end_time']))
+
+    info['ongoing'] = end_time == -1
+
+    if end_time == -1:
+        end_time = int(time.time())
+        info['end_time'] = 'Ongoing'
+    else:
+        info['end_time'] = str(datetime.fromtimestamp(end_time))
+
+    info['duration'] = str(timedelta(seconds=end_time - start_time))
+    info['alert_id'] = alert_id
+    info['start_time'] = str(datetime.fromtimestamp(start_time))
+
+    return info
 
 
 class StaticResource(object):
@@ -141,6 +164,33 @@ class ServerList:
         resp.body = ujson.dumps({'servers': pretty})
 
 
+class AlertList:
+    def __init__(self, r):
+        self.r = r
+
+    def on_get(self, req, resp):
+        active_alerts = (
+         get_alert_info(self.r, alert_id)
+         for state_name, alert_id in self.r.hgetall(key_map['alert_currently_firing']).iteritems())
+
+        historical_alerts = []
+
+        resp.body = ujson.dumps({'active': active_alerts, 'historical': historical_alerts})
+
+
+class Alert:
+    def __init__(self, r):
+        self.r = r
+
+    def on_get(self, req, resp, alert_id):
+        info = get_alert_info(self.r, alert_id)
+
+        if not info:
+            raise falcon.HTTPNotFound()
+
+        resp.body = ujson.dumps(info)
+
+
 def get_app():
     r = redis.StrictRedis.from_url('localhost:6379')
     app = falcon.API()
@@ -153,6 +203,10 @@ def get_app():
 
     # General listing of servers and their last status update
     app.add_route('/api/v0/servers', ServerList(r))
+
+    # List alerts. All active + 50 historical.
+    app.add_route('/api/v0/alerts', AlertList(r))
+    app.add_route('/api/v0/alerts/{alert_id}', Alert(r))
 
     # Pertaining to web UI
     app.add_route('/static/{filename}', StaticResource('/static'))

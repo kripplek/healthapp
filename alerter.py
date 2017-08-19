@@ -44,8 +44,10 @@ def generate_alert_id(state_name):
 def create_alert(r, state_name, description):
     now = time.time()
     alert_id = generate_alert_id(state_name)
+
     description['start_time'] = now
     description['end_time'] = -1
+    description['state_name'] = state_name
 
     # first, save new alert
     r.hmset(key_map['alert_info'].format(alert_id=alert_id), description)
@@ -72,6 +74,11 @@ def close_alert(r, state_name, alert_id):
 
     # get start time
     start_time = r.hget(alert_key, 'start_time')
+
+    if start_time:
+        start_time = float(start_time)
+    else:
+        start_time = 0
 
     # record duration
     duration = now - start_time
@@ -110,12 +117,13 @@ def main():
             else:
                 logger.info('Alert "%s" no longer firing. Closing.', state_name)
                 closed_alerts += 1
-                close_alert(state_name, alert_id)
+                close_alert(r, state_name, alert_id)
 
         # 2: create new alerts for states which are bad but not yet kept track of
         for state_name, description in bad_states.iteritems():
             alert_id = create_alert(r, state_name, description)
             logger.info('Created new alert "%s" with id %s', state_name, alert_id)
+            new_alerts += 1
             notify_alert_new(alert_id, state_name, description)
 
         # 3: purge records of ancient alerts
@@ -124,8 +132,8 @@ def main():
         # Log some info for this round
         loop_end = time.time()
         duration = loop_end - loop_start
-        logger.info('Alert processor ran in %.2f seconds. Will sleep %s seconds', duration, alert_process_interval)
         logger.info('New alerts: %s. Ongoing alerts: %s. Closed alerts: %s', new_alerts, ongoing_alerts, closed_alerts)
+        logger.info('Alert processor ran in %.2f seconds. Will sleep %s seconds', duration, alert_process_interval)
 
         # Wait until next...
         time.sleep(alert_process_interval)
