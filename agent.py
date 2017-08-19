@@ -24,18 +24,15 @@ def main():
     url = 'http://localhost:8000/api/v0/status/%s' % hostname
     interval = 60
     while True:
-        start_time = time.time()
         try:
             r = requests.post(url)
             r.raise_for_status()
             logger.info('Posted status to %s successfully', url)
         except Exception:
-						logger.exception('Failed posting')
+            logger.exception('Failed posting')
 
-        sleep_time = time.time() - start_time + 60
-
-        logger.info('Sleeping %s until next iteration', sleep_time)
-        time.sleep(sleep_time)
+        logger.info('Sleeping %s until next iteration', interval)
+        time.sleep(interval)
 
 
 if __name__ == '__main__':

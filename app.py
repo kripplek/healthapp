@@ -4,7 +4,6 @@
 
 import falcon
 import redis
-import hmac
 import time
 import ujson
 import re
@@ -12,7 +11,7 @@ import os
 from datetime import datetime
 
 key_map = {
-  'server_last_posts': 'healthapp:server_last_posts'
+    'server_last_posts': 'healthapp:server_last_posts'
 }
 
 mimes = {'.css': 'text/css',
@@ -76,9 +75,9 @@ class ServerList:
         good_time = time.time() - (60 * 5)
         servers = self.r.zrevrange(key_map['server_last_posts'], 0, -1, withscores=True)
         pretty = ({
-          'name': name,
-          'time': str(datetime.fromtimestamp(date)),
-          'good': date >= good_time
+            'name': name,
+            'time': str(datetime.fromtimestamp(date)),
+            'good': date >= good_time
         } for name, date in servers)
         resp.body = ujson.dumps({'servers': pretty})
 
