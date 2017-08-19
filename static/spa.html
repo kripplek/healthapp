@@ -21,6 +21,9 @@
   color: gray;
   font-style: italic;
 }
+.osicon {
+  margin: 5px;
+}
 </style>
 <script>
   $(init_healthapp);
@@ -49,7 +52,7 @@
     <tbody>
       {{#each servers}}
       <tr>
-        <td><a data-navigo href="/server/{{name}}">{{name}}</a></td>
+        <td><img class="osicon" src="/static/os_{{info.OS}}.png"><a data-navigo href="/server/{{name}}">{{name}}</a></td>
         <td class="status-{{#if good}}good{{else}}bad{{/if}}">{{time}}</td>
         <td>
            {{#if good}}<span class="label label-success">YES</span>{{else}}<span class="label label-danger">NO</span>{{/if}}

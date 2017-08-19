@@ -42,6 +42,17 @@ def confirm_hmac(r, server_name, body, given_hmac):
     return hmac.compare_digest(hmac_obj.digest(), given_hmac)
 
 
+def get_server_info(r, server_name):
+    info = r.get(key_map['server_info'].format(server_name=server_name))
+    if not info:
+        return {}
+
+    try:
+        return ujson.loads(info)
+    except ValueError:
+        return {}
+
+
 class StaticResource(object):
     def __init__(self, path):
         self.path = path.lstrip('/')
@@ -90,11 +101,11 @@ class ServerStatus:
             raise falcon.HTTPUnauthorized('Incorrect hmac')
 
         try:
-            data = ujson.loads(raw_body)
+            ujson.loads(raw_body)
         except ValueError:
             raise falcon.HTTPBadRequest('Failed parsing json body')
 
-        self.r.set(key_map['server_info'].format(server_name=server_name), data)
+        self.r.set(key_map['server_info'].format(server_name=server_name), raw_body)
 
         now = int(time.time())
         self.r.zadd(key_map['server_last_posts'], now, server_name)
@@ -129,7 +140,8 @@ class ServerList:
         pretty = ({
             'name': name,
             'time': str(datetime.fromtimestamp(date)),
-            'good': date >= good_time
+            'good': date >= good_time,
+            'info': get_server_info(self.r, name)
         } for name, date in servers)
         resp.body = ujson.dumps({'servers': pretty})
 
