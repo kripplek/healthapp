@@ -1,3 +1,7 @@
+# Stateless web app
+# Listen for requests from agents. Update their status in redis. Respond
+# to general inquiries and host web ui.
+
 import falcon
 import redis
 import hmac

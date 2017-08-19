@@ -1,3 +1,5 @@
+# Run one of these on each server that needs to be monitored
+
 import requests
 import socket
 import time
