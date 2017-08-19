@@ -2,3 +2,5 @@
 /env
 *swp
 agent_key.json
+*egg-info
+build
