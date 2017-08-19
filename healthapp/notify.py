@@ -47,7 +47,7 @@ def send_email(subject, body):
     configs = process_config()
 
     if not configs.get('enable_emails'):
-        logger.debug('Alert emails not allowed')
+        logger.debug('Alert emails disabled')
         return
 
     msg = MIMEText(body)

@@ -6,11 +6,12 @@ import time
 import uuid
 import logging
 import os
+from datetime import datetime
+from collections import defaultdict
+
 from constants import key_map, default_alert_process_interval, default_server_staleness_duration
 from notify import notify_alert_new, notify_alert_closed, notify_ongoing_alert
 from config import process_config
-from datetime import datetime
-
 
 logger = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -89,14 +90,30 @@ def close_alert(r, state_name, alert_id):
     notify_alert_closed(state_name, alert_id)
 
 
+def should_send_ongoing_alert(last_ongoing_alert_email, alert_send_email_interval, alert_id):
+    if not alert_send_email_interval or alert_send_email_interval == -1:
+        return False
+
+    now = int(time.time())
+
+    if (now - last_ongoing_alert_email[alert_id]) > alert_send_email_interval:
+        last_ongoing_alert_email[alert_id] = now
+        return True
+
+    return False
+
+
 def main():
     configs = process_config()
 
     redis_url = configs.get('redis', 'localhost:6379')
     alert_process_interval = configs.get('alert_process_interval', default_alert_process_interval)
     server_staleness_duration = configs.get('server_staleness_duration', default_server_staleness_duration)
+    alert_send_email_interval = configs.get('alert_send_email_interval', -1)
 
     r = redis.StrictRedis.from_url(redis_url)
+
+    last_ongoing_alert_email = defaultdict(int)
 
     while True:
         logger.info('Starting alert run..')
@@ -119,12 +136,17 @@ def main():
 
             if current_state:
                 logger.info('Alert "%s" still firing', state_name)
-                notify_ongoing_alert(alert_id, state_name)
+                if should_send_ongoing_alert(last_ongoing_alert_email, alert_send_email_interval, alert_id):
+                    logger.info('Will send ongoing email')
+                    notify_ongoing_alert(alert_id, state_name)
+                else:
+                    logger.info('Will not send ongoing email')
                 ongoing_alerts += 1
             else:
                 logger.info('Alert "%s" no longer firing. Closing.', state_name)
                 closed_alerts += 1
                 close_alert(r, state_name, alert_id)
+                last_ongoing_alert_email.pop(alert_id, None)
 
         # 2: create new alerts for states which are bad but not yet kept track of
         for state_name, description in bad_states.iteritems():
