@@ -9,11 +9,14 @@ import ujson
 import re
 import os
 import hashlib
+import base64
+import hmac
 from datetime import datetime
 
 key_map = {
     'server_last_posts': 'healthapp:server_last_posts',
     'server_auth_key': 'healthapp:server_key:{server_name}',
+    'server_info': 'healthapp:server_info:{server_name}',
 }
 
 mimes = {'.css': 'text/css',
@@ -26,8 +29,17 @@ mimes = {'.css': 'text/css',
 
 ui_root = os.path.abspath(os.path.dirname(__file__))
 
-
 _filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
+
+
+def confirm_hmac(r, server_name, body, given_hmac):
+    api_key = r.get(key_map['server_auth_key'].format(server_name=server_name))
+    if not api_key:
+        raise falcon.HTTPUnauthorized('No key provided for this server')
+
+    hmac_obj = hmac.new(api_key, body, hashlib.sha512)
+
+    return hmac.compare_digest(hmac_obj.digest(), given_hmac)
 
 
 class StaticResource(object):
@@ -65,6 +77,25 @@ class ServerStatus:
         self.r = r
 
     def on_post(self, req, resp, server_name):
+        hmac_header = req.get_header('X-INTEGRITY')
+
+        if not hmac_header:
+            raise falcon.HTTPUnauthorized('Missing hmac token')
+
+        hmac_digest = base64.urlsafe_b64decode(hmac_header)
+
+        raw_body = req.stream.read()
+
+        if not confirm_hmac(self.r, server_name, raw_body, hmac_digest):
+            raise falcon.HTTPUnauthorized('Incorrect hmac')
+
+        try:
+            data = ujson.loads(raw_body)
+        except ValueError:
+            raise falcon.HTTPBadRequest('Failed parsing json body')
+
+        self.r.set(key_map['server_info'].format(server_name=server_name), data)
+
         now = int(time.time())
         self.r.zadd(key_map['server_last_posts'], now, server_name)
 
