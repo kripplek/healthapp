@@ -4,3 +4,12 @@
 agent_key.json
 *egg-info
 build
+
+# These are generated upon debian package builds
+debian/healthapp.debhelper.log
+debian/healthapp.substvars
+debian/healthapp/
+debian/files
+build/
+debian/healthapp.postinst.debhelper
+new_version.txt
