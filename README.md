@@ -71,7 +71,7 @@ To start slave agent:
 
 ## Prod deployment
 
-If you have [dh-virtualenv](https://github.com/spotify/dh-virtualenv) installed, you can build a .deb package like this:
+If you have [dh-virtualenv](https://github.com/spotify/dh-virtualenv) installed, you can build a .deb package using the following. You could even use [quickdebrepo](https://github.com/jrgp/quickdebrepo) to host your own apt repositiory.
 
     dpkg-buildpackage -us -uc
 
