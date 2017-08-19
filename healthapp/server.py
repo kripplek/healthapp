@@ -12,7 +12,8 @@ import hashlib
 import base64
 import hmac
 from datetime import datetime, timedelta
-from constants import key_map, server_staleness_duration
+from constants import key_map, default_server_staleness_duration
+from config import process_config
 
 mimes = {'.css': 'text/css',
          '.jpg': 'image/jpeg',
@@ -27,13 +28,8 @@ ui_root = os.path.abspath(os.path.dirname(__file__))
 _filename_ascii_strip_re = re.compile(r'[^A-Za-z0-9_.-]')
 
 
-def confirm_hmac(r, server_name, body, given_hmac):
-    api_key = r.get(key_map['server_auth_key'].format(server_name=server_name))
-    if not api_key:
-        raise falcon.HTTPUnauthorized('No key provided for this server')
-
+def confirm_hmac(r, server_name, body, api_key, given_hmac):
     hmac_obj = hmac.new(api_key, body, hashlib.sha512)
-
     return hmac.compare_digest(hmac_obj.digest(), given_hmac)
 
 
@@ -122,8 +118,9 @@ def home_route(req, resp):
 
 
 class ServerStatus:
-    def __init__(self, r):
+    def __init__(self, r, api_key):
         self.r = r
+        self.api_key = api_key
 
     def on_post(self, req, resp, server_name):
         hmac_header = req.get_header('X-INTEGRITY')
@@ -135,7 +132,7 @@ class ServerStatus:
 
         raw_body = req.stream.read()
 
-        if not confirm_hmac(self.r, server_name, raw_body, hmac_digest):
+        if not confirm_hmac(self.r, server_name, raw_body, self.api_key, hmac_digest):
             raise falcon.HTTPUnauthorized('Incorrect hmac')
 
         try:
@@ -149,31 +146,13 @@ class ServerStatus:
         self.r.zadd(key_map['server_last_posts'], now, server_name)
 
 
-class NewServer:
-    def __init__(self, r):
-        self.r = r
-
-    def on_post(self, req, resp, server_name):
-        redis_key = key_map['server_auth_key'].format(server_name=server_name)
-
-        exists = self.r.get(redis_key)
-
-        if exists:
-            raise falcon.HTTPUnauthorized('Already seen this server')
-
-        new_key = hashlib.sha256(os.urandom(32)).hexdigest()
-
-        self.r.set(redis_key, new_key)
-
-        resp.body = ujson.dumps({'key': new_key})
-
-
 class ServerList:
-    def __init__(self, r):
+    def __init__(self, r, server_staleness_duration):
         self.r = r
+        self.server_staleness_duration = server_staleness_duration
 
     def on_get(self, req, resp):
-        good_time = time.time() - server_staleness_duration
+        good_time = time.time() - self.server_staleness_duration
         servers = self.r.zrevrange(key_map['server_last_posts'], 0, -1, withscores=True)
         pretty = ({
             'name': name,
@@ -221,17 +200,21 @@ class Alert:
 
 
 def get_app():
-    r = redis.StrictRedis.from_url('localhost:6379')
+    configs = process_config()
+
+    redis_url = configs.get('redis', 'localhost:6379')
+    server_staleness_duration = configs.get('server_staleness_duration', default_server_staleness_duration)
+    api_key = configs.get('api_key')
+
+    r = redis.StrictRedis.from_url(redis_url)
+
     app = falcon.API()
 
     # Get updates from servers
-    app.add_route('/api/v0/status/{server_name}', ServerStatus(r))
-
-    # New server key issuing
-    app.add_route('/api/v0/new_server/{server_name}', NewServer(r))
+    app.add_route('/api/v0/status/{server_name}', ServerStatus(r, api_key))
 
     # General listing of servers and their last status update
-    app.add_route('/api/v0/servers', ServerList(r))
+    app.add_route('/api/v0/servers', ServerList(r, server_staleness_duration))
 
     # List alerts. All active + 50 historical.
     app.add_route('/api/v0/alerts', AlertList(r))

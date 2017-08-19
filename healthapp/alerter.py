@@ -6,8 +6,9 @@ import time
 import uuid
 import logging
 import os
-from constants import key_map, alert_process_interval, server_staleness_duration
+from constants import key_map, default_alert_process_interval, default_server_staleness_duration
 from notify import notify_alert_new, notify_alert_closed, notify_ongoing_alert
+from config import process_config
 from datetime import datetime
 
 
@@ -24,7 +25,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 
-def get_bad_states(r):
+def get_bad_states(r, server_staleness_duration):
     bad_states = {}
 
     good_time = int(time.time() - server_staleness_duration)
@@ -89,7 +90,13 @@ def close_alert(r, state_name, alert_id):
 
 
 def main():
-    r = redis.StrictRedis.from_url('localhost:6379')
+    configs = process_config()
+
+    redis_url = configs.get('redis', 'localhost:6379')
+    alert_process_interval = configs.get('alert_process_interval', default_alert_process_interval)
+    server_staleness_duration = configs.get('server_staleness_duration', default_server_staleness_duration)
+
+    r = redis.StrictRedis.from_url(redis_url)
 
     while True:
         logger.info('Starting alert run..')
@@ -100,7 +107,7 @@ def main():
         new_alerts = 0
 
         # all currently bad alerts are here. dict of bad alert state name to info on that state
-        bad_states = get_bad_states(r)
+        bad_states = get_bad_states(r, server_staleness_duration)
 
         # 1: iterate through mapping of currently firing alerts in redis, checking if each
         # is stil in bad state. if not mark them as closed
