@@ -170,8 +170,9 @@ class AlertList:
 
     def on_get(self, req, resp):
         active_alerts = (
-         get_alert_info(self.r, alert_id)
-         for state_name, alert_id in self.r.hgetall(key_map['alert_currently_firing']).iteritems())
+            get_alert_info(self.r, alert_id)
+            for state_name, alert_id in self.r.hgetall(key_map['alert_currently_firing']).iteritems()
+        )
 
         historical_alerts = []
 
