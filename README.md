@@ -14,7 +14,7 @@ Open source (MIT) Python Replacement for New Relic's deprecated server health mo
 - Configurable email send intervals
 - Lightweight with minimal configuration and setup. Only dependency is redis.
 - HMAC auth + integrity checking to avoid other people sending you alerts
-- Smooth, lightweight UI provided by [Bootswatch](https://bootswatch.com/).
+- Smooth, lightweight single-page-app (SPA) UI, styled with [Bootswatch](https://bootswatch.com/).
 
 ## Components
 
