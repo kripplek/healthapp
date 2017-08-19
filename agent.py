@@ -9,6 +9,7 @@ import os
 import hmac
 import hashlib
 import base64
+import platform
 
 logger = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -61,7 +62,10 @@ def bootstrap_key(api_url, key_path):
 
 
 def get_stats():
-    return {}
+    return {
+        'OS': platform.system(),
+        'Kernel': platform.release()
+    }
 
 
 def generate_payload(stats, api_key):
