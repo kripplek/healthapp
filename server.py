@@ -12,12 +12,7 @@ import hashlib
 import base64
 import hmac
 from datetime import datetime
-
-key_map = {
-    'server_last_posts': 'healthapp:server_last_posts',
-    'server_auth_key': 'healthapp:server_key:{server_name}',
-    'server_info': 'healthapp:server_info:{server_name}',
-}
+from constants import key_map
 
 mimes = {'.css': 'text/css',
          '.jpg': 'image/jpeg',
