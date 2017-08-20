@@ -7,6 +7,10 @@ function init_healthapp() {
     $.get('/api/v0/servers', callback);
   }
 
+  function get_server(servername, callback) {
+    $.get('/api/v0/status/' + servername, callback);
+  }
+
   function get_alerts(callback) {
     $.get('/api/v0/alerts', callback);
   }
@@ -14,6 +18,7 @@ function init_healthapp() {
   var server_list = Handlebars.compile($('#server-list-template').html()),
       alert_list = Handlebars.compile($('#alert-list-template').html()),
       flash_template = Handlebars.compile($('#flash-template').html()),
+      server_view = Handlebars.compile($('#server-view-template').html()),
       user_pagination_interval = 100,
       $content = $('#content'),
       $flashes = $('#flashes'),
@@ -45,6 +50,12 @@ function init_healthapp() {
     });
   }
 
+  function server_view_page(params) {
+      get_server(params.servername, function(data) {
+        render_page(params.servername, server_view({info: data}));
+      });
+  }
+
   function alerts_list_page(params) {
     get_alerts(function(data) {
       render_page('Alerts', alert_list(data));
@@ -54,12 +65,7 @@ function init_healthapp() {
   router.on({
     '/': servers_list_page,
     '/alerts': alerts_list_page,
-
-    '/server/:servername': function (params) {
-      get_server(params.servername, function(data) {
-        render_page(params.username, user_viewer({user: params.username, info: data}));
-      });
-    },
+    '/server/:servername': server_view_page,
 
   }).resolve();
 }

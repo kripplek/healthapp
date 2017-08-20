@@ -45,6 +45,11 @@ def get_server_info(r, server_name):
 
     data['name'] = server_name
 
+    last_updated = r.zscore(key_map['server_last_posts'], server_name)
+
+    if last_updated:
+        data['Last Updated'] = str(datetime.fromtimestamp(last_updated))
+
     return data
 
 
@@ -144,6 +149,14 @@ class ServerStatus:
 
         now = int(time.time())
         self.r.zadd(key_map['server_last_posts'], now, server_name)
+
+    def on_get(self, req, resp, server_name):
+        info = get_server_info(self.r, server_name)
+
+        if not info:
+            raise falcon.HTTPNotFound()
+
+        resp.body = ujson.dumps(info)
 
 
 class ServerList:

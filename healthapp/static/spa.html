@@ -125,13 +125,32 @@
     </div>
   </div>
 
-
 </script>
 
 
 <script id="flash-template" type="text/x-handlebars-template">
   <div class="alert alert-dismissible alert-{{type}}">
     {{message}}
+  </div>
+</script>
+
+<script id="server-view-template" type="text/x-handlebars-template">
+  <div style="margin-top: 20px;" class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Server Health</h3>
+    </div>
+    <div class="panel-body">
+      <table class="table table-striped table-hover">
+        <tbody>
+          {{#each info}}
+          <tr>
+            <td>{{@key}}</td>
+            <td>{{this}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
   </div>
 </script>
 
