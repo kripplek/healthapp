@@ -36,6 +36,7 @@ function init_healthapp() {
   }
 
   function render_page(title, contents) {
+    document.title = title + ' :: HealthApp';
     $title.text(title);
     $content.html(contents);
     router.updatePageLinks();
