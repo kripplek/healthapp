@@ -12,6 +12,8 @@ import hashlib
 import base64
 import hmac
 from datetime import datetime, timedelta
+from operator import itemgetter
+
 from constants import key_map, default_server_staleness_duration
 from config import process_config
 
@@ -166,14 +168,14 @@ class ServerList:
 
     def on_get(self, req, resp):
         good_time = time.time() - self.server_staleness_duration
-        servers = self.r.zrevrange(key_map['server_last_posts'], 0, -1, withscores=True)
+        servers = self.r.zrange(key_map['server_last_posts'], 0, -1, withscores=True)
         pretty = ({
             'name': name,
             'time': str(datetime.fromtimestamp(date)),
             'good': date >= good_time,
             'info': get_server_info(self.r, name)
         } for name, date in servers)
-        resp.body = ujson.dumps({'servers': pretty})
+        resp.body = ujson.dumps({'servers': sorted(pretty, key=itemgetter('name'))})
 
 
 class AlertList:
