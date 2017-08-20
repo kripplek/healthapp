@@ -12,6 +12,7 @@ from collections import defaultdict
 from constants import key_map, default_alert_process_interval, default_server_staleness_duration
 from notify import notify_alert_new, notify_alert_closed, notify_ongoing_alert
 from config import process_config
+from service import daemon_init
 
 logger = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -105,6 +106,7 @@ def should_send_ongoing_alert(last_ongoing_alert_email, alert_send_email_interva
 
 def main():
     configs = process_config()
+    daemon_init(configs)
 
     redis_url = configs.get('redis', 'localhost:6379')
     alert_process_interval = configs.get('alert_process_interval', default_alert_process_interval)

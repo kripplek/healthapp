@@ -11,6 +11,7 @@ import hashlib
 import base64
 import platform
 from config import process_config
+from service import daemon_init
 
 logger = logging.getLogger()
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -46,6 +47,7 @@ def generate_payload(stats, api_key):
 
 def main():
     configs = process_config()
+    daemon_init(configs)
 
     api_url = configs.get('api_url', 'http://localhost:8000')
     api_key = configs.get('api_key')
