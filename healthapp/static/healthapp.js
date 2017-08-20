@@ -15,10 +15,15 @@ function init_healthapp() {
     $.get('/api/v0/alerts', callback);
   }
 
+  function get_alert(alert_id, callback) {
+    $.get('/api/v0/alert/' + alert_id, callback);
+  }
+
   var server_list = Handlebars.compile($('#server-list-template').html()),
       alert_list = Handlebars.compile($('#alert-list-template').html()),
       flash_template = Handlebars.compile($('#flash-template').html()),
       server_view = Handlebars.compile($('#server-view-template').html()),
+      alert_view = Handlebars.compile($('#alert-view-template').html()),
       user_pagination_interval = 100,
       $content = $('#content'),
       $flashes = $('#flashes'),
@@ -43,7 +48,6 @@ function init_healthapp() {
     }
   };
 
-
   function servers_list_page(params) {
     get_servers(function(data) {
       render_page('Servers', server_list(data));
@@ -62,9 +66,23 @@ function init_healthapp() {
     });
   }
 
+  function alert_view_page(params) {
+      get_alert(params.alertid, function(data) {
+        render_page(data.server.name + ' ' + data.human_bad, alert_view(data));
+      });
+  }
+
+  function alert_row_click(event) {
+    var alert_id = $(event.target).parent('tr').data('id');
+    router.navigate('/alert/' + alert_id);
+  }
+
+  $content.on('click', '.alert-row', alert_row_click)
+
   router.on({
     '/': servers_list_page,
     '/alerts': alerts_list_page,
+    '/alert/:alertid': alert_view_page,
     '/server/:servername': server_view_page,
 
   }).resolve();

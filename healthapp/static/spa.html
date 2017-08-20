@@ -24,6 +24,9 @@
 .osicon {
   margin: 5px;
 }
+.alert-row {
+  cursor: pointer;
+}
 </style>
 <script>
   $(init_healthapp);
@@ -82,7 +85,7 @@
         </thead>
         <tbody>
           {{#each active}}
-          <tr>
+          <tr class="alert-row" data-id="{{alert_id}}">
             <td>
             <img class="osicon" src="/static/os_{{server.OS}}.png"><a data-navigo href="/server/{{server.name}}">{{server.name}}</a>
             {{ human_bad }}</td>
@@ -112,7 +115,7 @@
         </thead>
         <tbody>
           {{#each historical}}
-          <tr>
+          <tr class="alert-row" data-id="{{alert_id}}">
             <td>
             <img class="osicon" src="/static/os_{{server.OS}}.png"><a data-navigo href="/server/{{server.name}}">{{server.name}}</a>
             {{ human_bad }}</td>
@@ -127,7 +130,6 @@
   </div>
 
 </script>
-
 
 <script id="flash-template" type="text/x-handlebars-template">
   <div class="alert alert-dismissible alert-{{type}}">
@@ -149,6 +151,40 @@
             <td>{{this}}</td>
           </tr>
           {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</script>
+
+<script id="alert-view-template" type="text/x-handlebars-template">
+  <div style="margin-top: 20px;" class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Alert</h3>
+    </div>
+    <div class="panel-body">
+      <table class="table table-striped table-hover">
+        <tbody>
+          <tr>
+            <td>Context</td>
+            <td>{{info}}</td>
+          </tr>
+          <tr>
+            <td>Start Time</td>
+            <td>{{start_time}}</td>
+          </tr>
+          <tr>
+            <td>End Time</td>
+            <td>{{#if ongoing}}<span class="label label-danger">Ongoing</span>{{else}}{{end_time}}{{/if}}</td>
+          </tr>
+          <tr>
+            <td>Duration</td>
+            <td>{{duration}}</td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td><a data-navigo href="/server/{{server.name}}">{{server.name}}</a></td>
+          </tr>
         </tbody>
       </table>
     </div>

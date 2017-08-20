@@ -231,7 +231,7 @@ def get_app():
 
     # List alerts. All active + 50 historical.
     app.add_route('/api/v0/alerts', AlertList(r))
-    app.add_route('/api/v0/alerts/{alert_id}', Alert(r))
+    app.add_route('/api/v0/alert/{alert_id}', Alert(r))
 
     # Pertaining to web UI
     app.add_route('/static/{filename}', StaticResource('/static'))
