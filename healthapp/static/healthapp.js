@@ -73,11 +73,17 @@ function init_healthapp() {
   }
 
   function alert_row_click(event) {
-    var alert_id = $(event.target).parent('tr').data('id');
+    var alert_id = $(event.target).closest('tr').data('id');
     router.navigate('/alert/' + alert_id);
   }
 
+  function server_row_click(event) {
+    var server_name = $(event.target).closest('tr').data('name');
+    router.navigate('/server/' + server_name);
+  }
+
   $content.on('click', '.alert-row', alert_row_click)
+  $content.on('click', '.server-row', server_row_click)
 
   router.on({
     '/': servers_list_page,

@@ -24,7 +24,7 @@
 .osicon {
   margin: 5px;
 }
-.alert-row {
+.alert-row, .server-row {
   cursor: pointer;
 }
 </style>
@@ -56,7 +56,7 @@
     </thead>
     <tbody>
       {{#each servers}}
-      <tr>
+      <tr class="server-row", data-name="{{name}}">
         <td><img class="osicon" src="/static/os_{{info.OS}}.png"><a data-navigo href="/server/{{name}}">{{name}}</a></td>
         <td class="status-{{#if good}}good{{else}}bad{{/if}}">{{time}}</td>
         <td>
