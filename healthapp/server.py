@@ -14,7 +14,7 @@ import hmac
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from constants import key_map, default_server_staleness_duration
+from constants import key_map, default_server_staleness_duration, alert_topic_map
 from config import process_config
 
 mimes = {'.css': 'text/css',
@@ -82,10 +82,14 @@ def get_alert_info(r, alert_id):
 
     alert_parts = state_name.split('_', 1)
 
-    if alert_parts[0] == 'stale':
-        info['human_bad'] = 'Offline'
+    info['human_bad'] = alert_topic_map.get(alert_parts[0], alert_parts[0])
 
-    info['server'] = get_server_info(r, alert_parts[1])
+    server_name = info.get('server_name')
+
+    if not server_name:
+        server_name = alert_parts[1]
+
+    info['server'] = get_server_info(r, server_name)
 
     # server record missing. possible if you've manually deleted records
     if not info['server']:

@@ -9,6 +9,7 @@ setup(name='healthapp',
           'console_scripts': [
               'alert-processor = healthapp.alerter:main',
               'agent = healthapp.agent:main',
+              'healthapp-admin = healthapp.cli:main',
           ]
       },
       )

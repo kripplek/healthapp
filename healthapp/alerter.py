@@ -34,7 +34,8 @@ def get_bad_states(r, server_staleness_duration):
     for server, value in r.zrevrangebyscore(key_map['server_last_posts'], good_time, 0, score_cast_func=int, withscores=True):
         key = 'stale_%s' % server
         bad_states[key] = {
-            'info': 'Server %s last reported on %s' % (server, datetime.fromtimestamp(value))
+            'info': 'Server %s last reported on %s' % (server, datetime.fromtimestamp(value)),
+            'server_name': server
         }
 
     return bad_states
@@ -58,6 +59,9 @@ def create_alert(r, state_name, description):
     # then log that alert record in our list of alerts
     r.zadd(key_map['alerts_historical'], now, alert_id)
 
+    # likewise for alerts per this server
+    r.zadd(key_map['server_alerts'].format(server_name=description['server_name']), now, alert_id)
+
     # then map this alert state name to the currently firing list of alerts
     r.hset(key_map['alert_currently_firing'], state_name, alert_id)
 
@@ -71,6 +75,10 @@ def close_alert(r, state_name, alert_id):
     r.hdel(key_map['alert_currently_firing'], state_name)
 
     alert_key = key_map['alert_info'].format(alert_id=alert_id)
+
+    # alert might not be real anymore. don't create it if it's been deleted.
+    if not r.exists(alert_key):
+        return
 
     # then, update its status as closed
     r.hset(alert_key, 'end_time', now)
