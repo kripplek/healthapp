@@ -57,7 +57,7 @@ def main():
         return
 
     api_key = str(api_key)
-    hostname = socket.gethostname()
+    hostname = socket.getfqdn()
 
     url = '%s/api/v0/status/%s' % (api_url, hostname)
     interval = 60
